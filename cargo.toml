@@ -1,0 +1,13 @@
+[package]
+name = "ruping"
+version = "0.1.0"
+edition = "2024"
+authors = ["Mahmoud Khaled Khera"]
+description = "the ping command"
+license = " Apache-2.0"
+readme = "README.md"
+keywords = ["ping", "network", "example"]   # optional
+categories = ["network-programming", ] # optional
+
+
+[dependencies]
