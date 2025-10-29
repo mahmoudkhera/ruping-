@@ -62,8 +62,8 @@ impl RawIpv4 {
         let total_len = (mem::size_of::<Self>() + data.len()) as u16;
         self.total_length = total_len.to_be();
 
-        let mut packet = struct_to_bytes(self); 
-        packet.extend_from_slice(data); 
+        let mut packet = struct_to_bytes(self);
+        packet.extend_from_slice(data);
 
         set_ipv4_checksum(&mut packet);
         packet

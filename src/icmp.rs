@@ -39,7 +39,6 @@ impl RawICMP {
     }
 }
 
-
 //helper function
 
 fn set_icmp_checksum(icmp_packet: &mut Vec<u8>) {
