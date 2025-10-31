@@ -45,6 +45,6 @@ fn set_icmp_checksum(icmp_packet: &mut Vec<u8>) {
     let checksum = rfc1071_checksum(&icmp_packet);
     let checksum_bytes = checksum.to_be_bytes();
 
-    icmp_packet[10] = checksum_bytes[0];
-    icmp_packet[11] = checksum_bytes[1];
+    icmp_packet[2] = checksum_bytes[0];
+    icmp_packet[3] = checksum_bytes[1];
 }

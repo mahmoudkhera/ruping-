@@ -6,12 +6,7 @@ use crate::net_utils::{rfc1071_checksum, struct_to_bytes};
 #[repr(u8)] // store enum as a single byte
 pub enum IpProtocol {
     ICMP = 1,
-    IGMP = 2,
-    TCP = 6,
-    UDP = 17,
-    ENCAP = 41,
-    OSPF = 89,
-    SCTP = 132,
+    // add some protocols later
 }
 
 impl IpProtocol {
