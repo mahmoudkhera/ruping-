@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::{Duration, Instant};
 
 use ruping::app::{function_timeout, process_income_packet, send_echo};
@@ -34,6 +35,7 @@ fn main() {
         if n != 0 {
             let mut buf = buf.lock().unwrap();
             process_income_packet(&mut buf[..n], rtt_ms);
+            thread::sleep(Duration::from_secs(1));
         } else {
             println!("Request timed out.");
         }

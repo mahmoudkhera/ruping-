@@ -22,14 +22,13 @@ pub fn process_income_packet(buf: &mut [u8], rtt_ms: f64) {
 
     let icmp_header = RawICMP::from_buf(&buf[ihl..]);
 
-    println!("kind {:?}", icmp_header.get_kind());
 
     let n_bytes = buf.len() - ihl;
 
     print_statistics(
         icmp_header.get_kind(),
         n_bytes as u32,
-        ipv4_header.get_dest(),
+        ipv4_header.get_src(),
         ipv4_header.get_ttl(),
         rtt_ms,
     );
@@ -53,7 +52,7 @@ pub fn send_echo(dst: &str, fd: i32) {
 
     let ip4_packet = ipv4.evaluate_ipv4(IpProtocol::ICMP, &icmp);
 
-    println!("{:?}", send_ipv4(fd, &ip4_packet, dst));
+    assert_eq!(Ok(()), send_ipv4(fd, &ip4_packet, dst));
 }
 
 fn get_local_ip(dst: &str) -> Ipv4Addr {

@@ -8,7 +8,7 @@ const AF_INET: c_int = 2; //ipv4
 const SOCK_RAW: c_int = 3; //for raw socket, which lets you build your own packets, including headers
 pub const IPPROTO_RAW: c_int = 255; //tells the kernel which protocol you’re using on top of IP — here it’s ICMP
 pub const IPPROTO_ICMP: c_int = 1;
-const AF_PACKET: c_int = 17; //AF_PACKET bypass kernel IP stack entirely:
+// const AF_PACKET: c_int = 17; //AF_PACKET bypass kernel IP stack entirely:
 
 const IPPROTO_IP: c_int = 0;
 const IP_HDRINCL: c_int = 2;
@@ -119,9 +119,7 @@ pub fn set_socket(fd: i32) {
 
         if ret < 0 {
             eprintln!("setsockopt() failed");
-        } else {
-            println!("✅ IP_HDRINCL enabled successfully on socket fd = {}", fd);
-        }
+        } 
     }
 }
 
@@ -137,9 +135,7 @@ pub fn recive(fd: i32, buf: &mut [u8]) -> usize {
         );
         if n < 0 {
             eprintln!("recvfrom failed: {:?}", io::Error::last_os_error());
-        } else {
-            println!("n   {n}")
-        }
+        } 
         n as usize
     }
 }
