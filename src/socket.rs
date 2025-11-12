@@ -65,20 +65,20 @@ pub struct sockaddr {
     pub sa_data: [i8; 14],
 }
 
-pub fn create_raw_sock(protocol: i32) -> Result<i32, String> {
+pub fn create_raw_sock(protocol: i32) -> i32 {
     unsafe {
         // create raw socket
         let fd = socket(AF_INET, SOCK_RAW, protocol);
         if fd < 0 {
             let err = io::Error::last_os_error();
-            return Err(format!("socket() failed {}", err).into());
+            eprintln!("create socket syscall  failed err {:?}", err);
         }
 
-        Ok(fd)
+        fd
     }
 }
 
-pub fn send_ipv4(fd: i32, pkkt: &[u8], dst: Ipv4Addr) -> Result<(), String> {
+pub fn send_ipv4(fd: i32, pkkt: &[u8], dst: Ipv4Addr) {
     unsafe {
         // build sockaddr_in for destination
         let mut addr: sockaddr_in = mem::zeroed();
@@ -98,9 +98,7 @@ pub fn send_ipv4(fd: i32, pkkt: &[u8], dst: Ipv4Addr) -> Result<(), String> {
         );
         if ret < 0 {
             let err = io::Error::last_os_error();
-            return Err(format!("socket() failed {}", err).into());
-        } else {
-            Ok(())
+            eprintln!("sendto() syscall  failed err {:?}", err);
         }
     }
 }
@@ -119,7 +117,7 @@ pub fn set_socket(fd: i32) {
 
         if ret < 0 {
             eprintln!("setsockopt() failed");
-        } 
+        }
     }
 }
 
@@ -134,8 +132,11 @@ pub fn recive(fd: i32, buf: &mut [u8]) -> usize {
             std::ptr::null_mut(),
         );
         if n < 0 {
-            eprintln!("recvfrom failed: {:?}", io::Error::last_os_error());
-        } 
+            eprintln!(
+                "recvfrom  sys call failed: {:?}",
+                io::Error::last_os_error()
+            );
+        }
         n as usize
     }
 }
