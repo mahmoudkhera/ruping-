@@ -7,7 +7,7 @@ use crate::net_utils::{rfc1071_checksum, struct_to_bytes};
 pub enum Kind {
     Echo,
     EchoReply,
-    Other,
+    Unknown,
 }
 
 #[repr(C, packed)]
@@ -31,7 +31,7 @@ impl RawICMP {
                 typ = 0;
                 code = 0;
             }
-            Kind::Other => (),
+            Kind::Unknown => (),
         }
 
         Self {
@@ -69,7 +69,7 @@ impl RawICMP {
         match (typ, code) {
             (8, 0) => Kind::Echo,
             (0, 0) => Kind::EchoReply,
-            (_, _) => Kind::Other,
+            (_, _) => Kind::Unknown,
         }
     }
 }

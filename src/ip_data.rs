@@ -101,6 +101,10 @@ impl RawIpv4 {
     pub fn get_length(&self) -> u16 {
         self.total_length.to_be()
     }
+
+    pub fn get_ttl(&self) -> u8 {
+        self.ttl.to_le()
+    }
 }
 
 //helper function

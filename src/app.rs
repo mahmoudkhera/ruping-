@@ -5,12 +5,12 @@ use std::{
 };
 
 use crate::{
-    icmp::{self, RawICMP},
+    icmp::{self, Kind, RawICMP},
     ip_data::{IpProtocol, RawIpv4},
     socket::send_ipv4,
 };
 
-pub fn process_income_packet(buf: &mut [u8]) {
+pub fn process_income_packet(buf: &mut [u8], rtt_ms: f64) {
     //suppse the mtu is 1500 and and may be another 100 addtiona bytes so buffer size is 1600
 
     // print_hex(&buf[..n].to_vec());
@@ -18,11 +18,21 @@ pub fn process_income_packet(buf: &mut [u8]) {
     //note that we do not need to process the incoming ip header
     //the kernal do it for us because the fd is icmp not raw
 
-    let (_, ihl) = RawIpv4::read_ip_header(&*buf);
+    let (ipv4_header, ihl) = RawIpv4::read_ip_header(&*buf);
 
     let icmp_header = RawICMP::from_buf(&buf[ihl..]);
 
     println!("kind {:?}", icmp_header.get_kind());
+
+    let n_bytes = buf.len() - ihl;
+
+    print_statistics(
+        icmp_header.get_kind(),
+        n_bytes as u32,
+        ipv4_header.get_dest(),
+        ipv4_header.get_ttl(),
+        rtt_ms,
+    );
 }
 
 pub fn send_echo(dst: &str, fd: i32) {
@@ -80,4 +90,11 @@ where
             false => thread::sleep(Duration::from_millis(5)),
         }
     }
+}
+
+fn print_statistics(kind: Kind, n_bytes: u32, dst: Ipv4Addr, ttl: u8, rtt_ms: f64) {
+    println!(
+        "{:?}   {} bytes from {}:  ttl={} time={:.2} ms",
+        kind, n_bytes, dst, ttl, rtt_ms
+    );
 }
