@@ -73,7 +73,9 @@ impl RawIpv4 {
 
         let checksum_prime = rfc1071_checksum(&buf[0..ihl]);
 
-        println!(" check sum{:02x}", checksum_prime);
+        if checksum_prime != 0 {
+            eprintln!("invalid ip packet")
+        }
 
         (header, ihl)
     }
@@ -104,8 +106,6 @@ impl RawIpv4 {
 //helper function
 fn set_ipv4_checksum(ipv4_packet: &mut Vec<u8>) {
     let checksum = rfc1071_checksum(&ipv4_packet);
-    println!(" send checksum {:02x}", checksum);
-    println!(" send checksum {:02x}", checksum.to_be());
     let checksum_bytes = checksum.to_be_bytes();
 
     ipv4_packet[10] = checksum_bytes[0];

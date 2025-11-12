@@ -50,13 +50,15 @@ impl RawICMP {
         packet
     }
 
-    pub fn from_buf(buf: &mut [u8]) -> RawICMP {
+    pub fn from_buf(buf: &[u8]) -> RawICMP {
         assert!(buf.len() > 8);
 
         let icmp_header = unsafe { ptr::read_unaligned(buf.as_ptr() as *const RawICMP) };
         let checksum_prime = rfc1071_checksum(&buf);
 
-        println!("icmp check sum{:02x}", checksum_prime);
+        if checksum_prime != 0 {
+            eprintln!("invalid icmp packet")
+        }
 
         icmp_header
     }

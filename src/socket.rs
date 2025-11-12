@@ -8,6 +8,8 @@ const AF_INET: c_int = 2; //ipv4
 const SOCK_RAW: c_int = 3; //for raw socket, which lets you build your own packets, including headers
 pub const IPPROTO_RAW: c_int = 255; //tells the kernel which protocol you’re using on top of IP — here it’s ICMP
 pub const IPPROTO_ICMP: c_int = 1;
+const AF_PACKET: c_int = 17; //AF_PACKET bypass kernel IP stack entirely:
+
 const IPPROTO_IP: c_int = 0;
 const IP_HDRINCL: c_int = 2;
 

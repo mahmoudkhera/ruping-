@@ -1,22 +1,36 @@
-use std::thread;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
-use ruping::app::{process_income_packet, send_echo};
-use ruping::socket;
-use ruping::socket::create_raw_sock;
+use ruping::app::{function_timeout, process_income_packet, send_echo};
+use ruping::socket::{self, set_socket};
+use ruping::socket::{create_raw_sock, recive};
 
 fn main() {
     let send_fd = create_raw_sock(socket::IPPROTO_RAW).unwrap();
+
+    set_socket(send_fd);
     let recive_fd = create_raw_sock(socket::IPPROTO_ICMP).unwrap();
+    let buf = Arc::new(Mutex::new([0u8; 1024]));
 
-    thread::spawn(move || {
-        loop {
-            process_income_packet(recive_fd);
-        }
-    });
+    let dst = "1.1.1.1";
 
-    let dst = "192.168.13.6";
-
-    for _ in 0..=3 {
+    for _ in 0..4 {
         send_echo(dst, send_fd);
+        let buf_clone = Arc::clone(&buf); // clone the Arc
+
+        let n = function_timeout(
+            move || {
+                let mut buf = buf_clone.lock().unwrap();
+                recive(recive_fd, &mut *buf)
+            },
+            Duration::from_secs(1),
+        );
+
+        if n != 0 {
+            let mut buf = buf.lock().unwrap();
+            process_income_packet(&mut buf[..n]);
+        } else {
+            println!("Request timed out.");
+        }
     }
 }

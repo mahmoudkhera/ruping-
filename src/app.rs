@@ -1,26 +1,26 @@
-use std::net::{Ipv4Addr, UdpSocket};
+use std::{
+    net::{Ipv4Addr, UdpSocket},
+    thread,
+    time::{Duration, Instant},
+};
 
 use crate::{
     icmp::{self, RawICMP},
     ip_data::{IpProtocol, RawIpv4},
-    socket::{recive, send_ipv4},
+    socket::send_ipv4,
 };
 
-pub fn process_income_packet(fd:i32) {
+pub fn process_income_packet(buf: &mut [u8]) {
     //suppse the mtu is 1500 and and may be another 100 addtiona bytes so buffer size is 1600
-    let mut buf = [0u8; 1800];
 
-
-    recive(fd, &mut buf[..]);
+    // print_hex(&buf[..n].to_vec());
 
     //note that we do not need to process the incoming ip header
     //the kernal do it for us because the fd is icmp not raw
 
-    let (_, ihl) = RawIpv4::read_ip_header(&buf);
+    let (_, ihl) = RawIpv4::read_ip_header(&*buf);
 
-    println!("data_offset {}", ihl);
-
-    let icmp_header = RawICMP::from_buf(&mut buf[ihl..]);
+    let icmp_header = RawICMP::from_buf(&buf[ihl..]);
 
     println!("kind {:?}", icmp_header.get_kind());
 }
@@ -59,9 +59,25 @@ fn get_local_ip(dst: &str) -> Ipv4Addr {
     }
 }
 
-fn print_hex(vec: &Vec<u8>) {
-    for byte in vec {
-        print!("{:02x} ", byte);
+pub fn function_timeout<F>(f: F, timeout: Duration) -> usize
+where
+    F: FnOnce() -> usize + Send + 'static,
+{
+    let handle = thread::spawn(f);
+
+    let start = Instant::now();
+
+    loop {
+        if start.elapsed() >= timeout {
+            return 0;
+        }
+
+        match handle.is_finished() {
+            true => {
+                let n = handle.join().unwrap();
+                return n;
+            }
+            false => thread::sleep(Duration::from_millis(5)),
+        }
     }
-    println!();
 }
