@@ -1,4 +1,4 @@
-use std::{mem, net::Ipv4Addr};
+use std::{mem, net::Ipv4Addr, ptr};
 
 use crate::net_utils::{rfc1071_checksum, struct_to_bytes};
 
@@ -58,16 +58,54 @@ impl RawIpv4 {
         self.total_length = total_len.to_be();
 
         let mut packet = struct_to_bytes(self);
+        set_ipv4_checksum(&mut packet);
         packet.extend_from_slice(data);
 
-        set_ipv4_checksum(&mut packet);
         packet
+    }
+
+    pub fn read_ip_header(buf: &[u8]) -> (RawIpv4, usize) {
+        assert!(buf.len() >= std::mem::size_of::<RawIpv4>());
+
+        let header = unsafe { ptr::read_unaligned(buf.as_ptr() as *const RawIpv4) };
+
+        let ihl = (header.version_ihl & 0x0F) as usize * 4;
+
+        let checksum_prime = rfc1071_checksum(&buf[0..ihl]);
+
+        println!(" check sum{:02x}", checksum_prime);
+
+        (header, ihl)
+    }
+
+    pub fn get_src(&self) -> Ipv4Addr {
+        Ipv4Addr::new(
+            self.src_addr[0],
+            self.src_addr[1],
+            self.src_addr[2],
+            self.src_addr[3],
+        )
+    }
+
+    pub fn get_dest(&self) -> Ipv4Addr {
+        Ipv4Addr::new(
+            self.dst_addr[0],
+            self.dst_addr[1],
+            self.dst_addr[2],
+            self.dst_addr[3],
+        )
+    }
+
+    pub fn get_length(&self) -> u16 {
+        self.total_length.to_be()
     }
 }
 
 //helper function
 fn set_ipv4_checksum(ipv4_packet: &mut Vec<u8>) {
     let checksum = rfc1071_checksum(&ipv4_packet);
+    println!(" send checksum {:02x}", checksum);
+    println!(" send checksum {:02x}", checksum.to_be());
     let checksum_bytes = checksum.to_be_bytes();
 
     ipv4_packet[10] = checksum_bytes[0];

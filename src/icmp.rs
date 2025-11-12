@@ -1,8 +1,13 @@
+use std::ptr;
+
 use crate::net_utils::{rfc1071_checksum, struct_to_bytes};
 
-pub enum KIND {
-    ECHO,
-    ECHOREPLY,
+#[derive(Debug)]
+#[repr(u8)] // store enum as a single byte
+pub enum Kind {
+    Echo,
+    EchoReply,
+    Other,
 }
 
 #[repr(C, packed)]
@@ -14,18 +19,25 @@ pub struct RawICMP {
 }
 
 impl RawICMP {
-    pub fn new(kind: KIND) -> Self {
+    pub fn new(kind: Kind) -> Self {
+        let mut typ = 0;
+        let mut code = 0;
         match kind {
-            KIND::ECHO => Self {
-                r#type: 8,
-                code: 0,
-                checksum: 0,
-            },
-            KIND::ECHOREPLY => Self {
-                r#type: 0,
-                code: 0,
-                checksum: 0,
-            },
+            Kind::Echo => {
+                typ = 8;
+                code = 0;
+            }
+            Kind::EchoReply => {
+                typ = 0;
+                code = 0;
+            }
+            Kind::Other => (),
+        }
+
+        Self {
+            r#type: typ,
+            code: code,
+            checksum: 0,
         }
     }
 
@@ -36,6 +48,27 @@ impl RawICMP {
         set_icmp_checksum(&mut packet);
 
         packet
+    }
+
+    pub fn from_buf(buf: &mut [u8]) -> RawICMP {
+        assert!(buf.len() > 8);
+
+        let icmp_header = unsafe { ptr::read_unaligned(buf.as_ptr() as *const RawICMP) };
+        let checksum_prime = rfc1071_checksum(&buf);
+
+        println!("icmp check sum{:02x}", checksum_prime);
+
+        icmp_header
+    }
+
+    pub fn get_kind(&self) -> Kind {
+        let typ = self.r#type;
+        let code = self.code;
+        match (typ, code) {
+            (8, 0) => Kind::Echo,
+            (0, 0) => Kind::EchoReply,
+            (_, _) => Kind::Other,
+        }
     }
 }
 
