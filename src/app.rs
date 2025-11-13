@@ -1,18 +1,16 @@
 use std::{
     net::{Ipv4Addr, UdpSocket},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, atomic::Ordering},
     thread,
     time::{Duration, Instant},
 };
 
 use crate::{
+    exitstatus,
     icmp::{self, Kind, RawICMP},
     ip_data::{IpProtocol, RawIpv4},
-    socket::{self, send_ipv4, set_socket,create_raw_sock, recive},
+    socket::{self, create_raw_sock, recive, send_ipv4, set_socket},
 };
-
-
-
 
 pub fn app_start(dst: &str) {
     // create the two fd before start send or recive
@@ -20,12 +18,21 @@ pub fn app_start(dst: &str) {
     set_socket(send_fd);
     let recive_fd = create_raw_sock(socket::IPPROTO_ICMP);
 
+    let src = get_local_ip(dst);
+    // We do unwrap here because the get local check the correctness of the dst
+    let dst = dst.parse().unwrap();
+
     //suppse the mtu is 1500 and and may be another 100 addtiona bytes so buffer size is 1600
     let buf = Arc::new(Mutex::new([0u8; 1600]));
 
+    let mut exitstatus = exitstatus::ExistStatus::new();
+
     for _ in 0..4 {
         let start = Instant::now();
-        send_echo(dst, send_fd);
+
+        if send_echo(src, dst, send_fd) {
+            exitstatus.add_trasn();
+        };
         let buf_clone = Arc::clone(&buf); // clone the Arc
 
         let n = function_timeout(
@@ -38,14 +45,22 @@ pub fn app_start(dst: &str) {
 
         let rtt_ms = start.elapsed().as_secs_f64() * 1000.0;
 
-        if n != 0 {
+        if n > 0 {
             let mut buf = buf.lock().unwrap();
             process_income_packet(&mut buf[..n], rtt_ms);
+            exitstatus.add_recv();
+            exitstatus.add_rtt(rtt_ms);
             thread::sleep(Duration::from_secs(1));
         } else {
             println!("Request timed out.");
         }
+
+        if exitstatus::SIGANAL_RECIVED.load(Ordering::SeqCst) {
+            break;
+        }
     }
+
+    exitstatus.print_summary();
 }
 
 pub fn process_income_packet(buf: &mut [u8], rtt_ms: f64) {
@@ -67,7 +82,7 @@ pub fn process_income_packet(buf: &mut [u8], rtt_ms: f64) {
     );
 }
 
-pub fn send_echo(dst: &str, fd: i32) {
+pub fn send_echo(src: Ipv4Addr, dst: Ipv4Addr, fd: i32) -> bool {
     let data = b"this is the echo message why not working";
 
     //make an icmp echo message
@@ -75,17 +90,11 @@ pub fn send_echo(dst: &str, fd: i32) {
 
     let icmp = icmp.evaluate_icmp(data);
 
-    // Set the parameters of ip header manually
-
-    let src = get_local_ip(dst);
-
-    // We do unwrap here because the get local check the correctness of the dst
-    let dst = dst.parse().unwrap();
     let mut ipv4 = RawIpv4::new(0, 222, src, dst);
 
     let ip4_packet = ipv4.evaluate_ipv4(IpProtocol::ICMP, &icmp);
 
-    send_ipv4(fd, &ip4_packet, dst);
+    send_ipv4(fd, &ip4_packet, dst)
 }
 
 fn get_local_ip(dst: &str) -> Ipv4Addr {

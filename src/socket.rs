@@ -78,7 +78,7 @@ pub fn create_raw_sock(protocol: i32) -> i32 {
     }
 }
 
-pub fn send_ipv4(fd: i32, pkkt: &[u8], dst: Ipv4Addr) {
+pub fn send_ipv4(fd: i32, pkkt: &[u8], dst: Ipv4Addr) -> bool {
     unsafe {
         // build sockaddr_in for destination
         let mut addr: sockaddr_in = mem::zeroed();
@@ -97,9 +97,9 @@ pub fn send_ipv4(fd: i32, pkkt: &[u8], dst: Ipv4Addr) {
             mem::size_of::<sockaddr_in>() as u32,
         );
         if ret < 0 {
-            let err = io::Error::last_os_error();
-            eprintln!("sendto() syscall  failed err {:?}", err);
+            return false;
         }
+        true
     }
 }
 
