@@ -20,6 +20,16 @@ It sends ICMP echo requests to a target host and measures round-trip time (RTT),
 - Implemented from scratch using system calls and raw sockets  
 
 
+
+## Current limitations : 
+
+- Supports both sync and async modes 
+- No cli yet (hard coded destination)
+
+- Contribution is appreciated to add the full ping features and cli
+
+
+
 ```bash
 EchoReply   44 bytes from 1.1.1.1:  ttl=128 time=44.85 ms
 EchoReply   44 bytes from 1.1.1.1:  ttl=128 time=40.31 ms
@@ -30,12 +40,6 @@ EchoReply   44 bytes from 1.1.1.1:  ttl=128 time=39.57 ms
 4 packets transmitted, 4 received, 0% packet loss, avarage rtt 41.96ms
 
 
-## Current limitations : 
-
-- Supports both sync and async modes 
-- No cli yet (hard coded destination)
-
-- Contribution is appreciated to add the full ping features and cli
 
 
 
